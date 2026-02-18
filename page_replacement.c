@@ -4,10 +4,7 @@
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
-#include <conio.h>
 #else
-#include <termios.h>
-#include <sys/select.h>
 #include <unistd.h>
 #endif
 
@@ -49,15 +46,10 @@ int optimal(int pages[], int n, int frames, SimOptions opts);
 int simulate(AlgoType algo, int pages[], int n, int frames, SimOptions opts);
 void init_int_array(int *arr, int size, int value);
 int find_in_frame(int *frame, int frames, int page);
-int find_empty_slot(int *frame, int frames);
 int get_int(const char *prompt, int min, int max);
 void sleep_ms(int ms);
 void tui_begin(const char *title);
 void tui_end(void);
-void tui_enable_input(void);
-void tui_disable_input(void);
-int tui_kbhit(void);
-int tui_getch(void);
 void tui_progress_bar(int step, int total);
 void tui_render_step(const char *alg, int step, int total, int current_page, int frames, int frame[], int found, int replaced_index, int faults, int pages[], RenderMode mode, int paused, int flash_victim);
 int tui_wait_step(RenderMode mode, int *delay_ms, int *paused);
@@ -175,66 +167,14 @@ void tui_begin(const char *title)
     printf("\033[2J\033[H\033[?25l");
     printf(BOLD "%s" RESET "\n", title);
     fflush(stdout);
-    tui_enable_input();
 }
 
 void tui_end(void)
 {
-    tui_disable_input();
     printf("\033[?25h");
     fflush(stdout);
 }
 
-#ifdef _WIN32
-void tui_enable_input(void) {}
-void tui_disable_input(void) {}
-int tui_kbhit(void) { return _kbhit(); }
-int tui_getch(void) { return _getch(); }
-#else
-static struct termios tui_orig_termios;
-static int tui_termios_enabled = 0;
-
-void tui_enable_input(void)
-{
-    struct termios raw;
-    if (tui_termios_enabled)
-        return;
-    tcgetattr(STDIN_FILENO, &tui_orig_termios);
-    raw = tui_orig_termios;
-    raw.c_lflag &= (tcflag_t) ~(ICANON | ECHO);
-    raw.c_cc[VMIN] = 0;
-    raw.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
-    tui_termios_enabled = 1;
-}
-
-void tui_disable_input(void)
-{
-    if (!tui_termios_enabled)
-        return;
-    tcsetattr(STDIN_FILENO, TCSANOW, &tui_orig_termios);
-    tui_termios_enabled = 0;
-}
-
-int tui_kbhit(void)
-{
-    fd_set set;
-    struct timeval tv;
-    FD_ZERO(&set);
-    FD_SET(STDIN_FILENO, &set);
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    return select(STDIN_FILENO + 1, &set, NULL, NULL, &tv) > 0;
-}
-
-int tui_getch(void)
-{
-    unsigned char c;
-    if (read(STDIN_FILENO, &c, 1) == 1)
-        return c;
-    return -1;
-}
-#endif
 
 void tui_progress_bar(int step, int total)
 {
@@ -367,7 +307,7 @@ void tui_render_step(const char *alg, int step, int total, int current_page, int
     printf("+\n");
     printf("Legend: " GREEN "HIT" RESET ", " RED "FAULT" RESET ", " YELLOW "-" RESET " empty\n");
     if (mode == RENDER_TUI_AUTO)
-        printf("Controls: " BOLD "P" RESET " pause/resume, " BOLD "N" RESET " step, " BOLD "+/-" RESET " speed, " BOLD "Q" RESET " quit\n");
+        printf("Controls: " BOLD "Ctrl+C" RESET " to quit\n");
     else
         printf("Controls: " BOLD "Enter" RESET " next step, " BOLD "Q" RESET " quit\n");
     fflush(stdout);
@@ -377,65 +317,20 @@ int tui_wait_step(RenderMode mode, int *delay_ms, int *paused)
 {
     if (mode == RENDER_TUI_AUTO)
     {
-        int elapsed = 0;
-        while (elapsed < *delay_ms)
-        {
-            if (tui_kbhit())
-            {
-                int c = tui_getch();
-                if (c == 'q' || c == 'Q')
-                    return 1;
-                if (c == 'p' || c == 'P')
-                    *paused = !(*paused);
-                if (c == 'n' || c == 'N')
-                    *paused = 1;
-                if (c == '+')
-                    *delay_ms = (*delay_ms > 50) ? (*delay_ms - 50) : 50;
-                if (c == '-')
-                    *delay_ms = (*delay_ms < 2000) ? (*delay_ms + 50) : 2000;
-            }
-            if (*paused)
-                break;
-            sleep_ms(25);
-            elapsed += 25;
-        }
-        while (*paused)
-        {
-            if (tui_kbhit())
-            {
-                int c = tui_getch();
-                if (c == 'q' || c == 'Q')
-                    return 1;
-                if (c == 'p' || c == 'P')
-                {
-                    *paused = 0;
-                    break;
-                }
-                if (c == 'n' || c == 'N')
-                    break;
-                if (c == '+')
-                    *delay_ms = (*delay_ms > 50) ? (*delay_ms - 50) : 50;
-                if (c == '-')
-                    *delay_ms = (*delay_ms < 2000) ? (*delay_ms + 50) : 2000;
-            }
-            sleep_ms(25);
-        }
+        sleep_ms(*delay_ms);
         return 0;
     }
     if (mode == RENDER_TUI_STEP)
     {
-        while (1)
+        char buf[16];
+        printf("\nPress Enter for next step, or 'q' then Enter to quit: ");
+        fflush(stdout);
+        if (fgets(buf, sizeof(buf), stdin) != NULL)
         {
-            if (tui_kbhit())
-            {
-                int c = tui_getch();
-                if (c == 'q' || c == 'Q')
-                    return 1;
-                if (c == '\n' || c == '\r')
-                    return 0;
-            }
-            sleep_ms(25);
+            if (buf[0] == 'q' || buf[0] == 'Q')
+                return 1;
         }
+        return 0;
     }
     return 0;
 }
@@ -460,31 +355,6 @@ int find_in_frame(int *frame, int frames, int page)
             return i;
     }
     return -1;
-}
-
-int find_empty_slot(int *frame, int frames)
-{
-    for (int i = 0; i < frames; i++)
-    {
-        if (frame[i] == -1)
-            return i;
-    }
-    return -1;
-}
-
-int findLRU(int time[], int frames)
-{
-    int i, pos = 0, min = time[0];
-
-    for (i = 1; i < frames; i++)
-    {
-        if (time[i] < min)
-        {
-            min = time[i];
-            pos = i;
-        }
-    }
-    return pos;
 }
 
 int findOptimal(int pages[], int frame[], int n, int index, int frames)
@@ -584,13 +454,36 @@ int simulate(AlgoType algo, int pages[], int n, int frames, SimOptions opts)
             }
             else
             {
-                int empty = find_empty_slot(frame, frames);
+                int empty = -1;
+                for (int j = 0; j < frames; j++)
+                {
+                    if (frame[j] == -1)
+                    {
+                        empty = j;
+                        break;
+                    }
+                }
                 if (empty != -1)
+                {
                     pos = empty;
+                }
                 else if (algo == ALGO_LRU)
-                    pos = findLRU(time, frames);
+                {
+                    int min = time[0];
+                    pos = 0;
+                    for (int j = 1; j < frames; j++)
+                    {
+                        if (time[j] < min)
+                        {
+                            min = time[j];
+                            pos = j;
+                        }
+                    }
+                }
                 else
+                {
                     pos = findOptimal(pages, frame, n, i + 1, frames);
+                }
             }
 
             if (frame[pos] != -1)
