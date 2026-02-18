@@ -64,6 +64,11 @@ In operating systems, when physical memory (RAM) is full and a new page needs to
   - Red indicators for page faults
   - Cyan headers for better readability
   - Yellow markers for empty frames
+- **🖥️ Interactive TUI Simulation**
+  - Step-by-step mode (press Enter to advance)
+  - Auto-play mode with adjustable speed
+  - Live frame visualization, hit/fault status, and running stats
+  - Pause/resume and step controls in auto mode
 
 - **📊 Detailed Statistics**
   - Total page faults count
@@ -155,6 +160,30 @@ When you run the program, you'll see the main menu:
 Enter your choice:
 ```
 
+### Output Modes
+
+After selecting an algorithm and entering input, choose how to visualize:
+
+```
+1. TUI step-by-step
+2. TUI auto (animated)
+```
+
+Auto mode lets you set a delay in milliseconds (recommended: 200–500ms).
+Controls:
+- Auto mode: `P` pause/resume, `N` step, `+/-` speed, `Q` quit
+- Step mode: `Enter` next step, `Q` quit
+
+### Automated Reference Strings
+
+The simulator now generates the reference string automatically based on your inputs:
+
+- Number of references
+- Maximum page number
+- Number of frames
+
+This makes the simulation fully automated and ready for visualization.
+
 ### Input Requirements
 
 1. **Select Algorithm** (1-5)
@@ -162,8 +191,8 @@ Enter your choice:
 2. **Number of Pages** (1-100)
    - Total number of page references to process
 
-3. **Reference String** (space-separated integers 0-999)
-   - Example: `7 0 1 2 0 3 0 4 2 3 0 3`
+3. **Max Page Number** (1-999)
+   - Reference string is auto-generated within `0..max`
 
 4. **Number of Frames** (1-100)
    - Available memory frames for pages
@@ -173,8 +202,7 @@ Enter your choice:
 ```bash
 Enter your choice: 1
 Enter number of pages (1-100): 12
-Enter reference string (space-separated, pages 0-999):
-7 0 1 2 0 3 0 4 2 3 0 3
+Enter max page number (1-999): 9
 Enter number of frames (1-100): 3
 ```
 
@@ -182,30 +210,12 @@ Enter number of frames (1-100): 3
 
 ## 📊 Understanding the Output
 
-### Table Format
+The simulation renders a full-screen TUI dashboard showing:
 
-The output displays a table showing the state of memory frames after each page reference:
-
-```
-+------+------+------+------+--------+
-| Page |  F1  |  F2  |  F3  | Status |
-+------+------+------+------+--------+
-|    7 |   7  |   -  |   -  |  Fault |
-|    0 |   7  |   0  |   -  |  Fault |
-|    1 |   7  |   0  |   1  |  Fault |
-|    2 |   2  |   0  |   1  |  Fault |
-|    0 |   2  |   0  |   1  |  Hit   |
-+------+------+------+------+--------+
-```
-
-**Column Descriptions**:
-
-- **Page**: The current page being referenced
-- **F1, F2, F3...**: Memory frame contents
-- **Status**:
-  - 🟢 **Hit**: Page already in memory (no fault)
-  - 🔴 **Fault**: Page not in memory (replacement needed)
-  - 🟡 **-**: Empty frame slot
+- Current step, page, and status (hit/fault)
+- Live frame contents
+- Running stats (faults, hits, hit ratio)
+- The generated reference string with the current page highlighted
 
 ### Performance Metrics
 
@@ -233,37 +243,31 @@ Fault Rate        = 0.75 (75%)
 
 ```
 Algorithm: FIFO
-Pages: 12
-Reference String: 7 0 1 2 0 3 0 4 2 3 0 3
+References: 12
+Max Page: 9
 Frames: 3
 ```
 
-**Expected Output**:
+**Notes**:
 
-- FIFO page faults: 9
-- The algorithm will replace pages in the order they were loaded
+- The reference string is generated automatically within `0..Max Page`.
+- The algorithm will replace pages in the order they were loaded.
 
 ### Example 2: Comparing Algorithms
 
 **Input**:
 
 ```
-Choice: 4 (Compare All)
-Pages: 20
-Reference String: 1 2 3 4 1 2 5 1 2 3 4 5 6 7 8 9 10 11 12 13
+Algorithm: LRU
+References: 20
+Max Page: 13
 Frames: 4
 ```
 
-**Expected Output**:
+**Notes**:
 
-```
-Comparison Summary
-==============================
-Algorithm       Page Faults
-FIFO            15
-LRU             14
-Optimal         12
-```
+- The reference string is generated automatically.
+- Use the TUI auto mode for full visualization.
 
 ### Example 3: Belady's Anomaly Demonstration
 
@@ -271,7 +275,8 @@ Optimal         12
 
 ```
 Algorithm: FIFO
-Reference String: 1 2 3 4 1 2 5 1 2 3 4 5
+References: 12
+Max Page: 5
 
 Test 1 - Frames: 3
 Test 2 - Frames: 4
