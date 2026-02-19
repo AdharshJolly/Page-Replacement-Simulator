@@ -9,7 +9,7 @@
 #endif
 
 #define MAX 100
-#define MAX_PAGE 999
+#define MAX_PAGE 9
 #define TUI_WIDTH 78
 
 // ANSI Color Codes
@@ -88,7 +88,7 @@ int main()
 
         n = get_int("\nEnter number of references (1-100): ", 1, MAX);
 
-        int max_page = get_int("Enter max page number (1-999): ", 1, MAX_PAGE);
+        int max_page = get_int("Enter max page number (1-9): ", 1, MAX_PAGE);
 
         frames = get_int("Enter number of frames (1-100): ", 1, MAX);
 
@@ -174,7 +174,6 @@ void tui_end(void)
     printf("\033[?25h");
     fflush(stdout);
 }
-
 
 void tui_progress_bar(int step, int total)
 {
