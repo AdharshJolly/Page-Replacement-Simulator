@@ -7,7 +7,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 
-**A comprehensive command-line simulator for analyzing and comparing page replacement algorithms in operating systems**
+**A command-line simulator for exploring page replacement algorithms in operating systems**
 
 [Features](#-features) • [Usage](#-usage) • [Algorithms](#-algorithms) • [Examples](#-examples)
 
@@ -34,7 +34,7 @@
 
 ## 🌟 Overview
 
-The **Page Replacement Simulator** is an educational tool designed to help students and professionals understand how operating systems manage memory through page replacement algorithms. This interactive simulator implements three fundamental page replacement strategies used in virtual memory management and provides detailed visual feedback with performance metrics.
+The **Page Replacement Simulator** is an educational tool designed to help students and professionals understand how operating systems manage memory through page replacement algorithms. This interactive simulator implements three fundamental page replacement strategies used in virtual memory management and provides visual feedback with performance metrics.
 
 ### What is Page Replacement?
 
@@ -51,11 +51,10 @@ In operating systems, when physical memory (RAM) is full and a new page needs to
   - LRU (Least Recently Used)
   - Optimal (Belady's Algorithm)
 
-- **Comprehensive Analysis**
-  - Real-time page table visualization
+- **Simulation Output**
+  - Real-time frame visualization
   - Page hit/fault tracking
   - Performance metrics calculation
-  - Side-by-side algorithm comparison
 
 ### 🎨 User Experience
 
@@ -66,21 +65,18 @@ In operating systems, when physical memory (RAM) is full and a new page needs to
   - Yellow markers for empty frames
 - **🖥️ Interactive TUI Simulation**
   - Step-by-step mode (press Enter to advance)
-  - Auto-play mode with adjustable speed
+  - Auto-play mode with a fixed delay set at start
   - Live frame visualization, hit/fault status, and running stats
-  - Pause/resume and step controls in auto mode
 
 - **📊 Detailed Statistics**
   - Total page faults count
   - Hit ratio (with percentage)
   - Fault rate (with percentage)
-  - Comparative analysis mode
 
 - **🛡️ Robust Input Validation**
   - Range checking for all inputs
   - Invalid input handling
   - User-friendly error messages
-  - Continuous operation mode
 
 ### 🔧 Technical Features
 
@@ -88,7 +84,7 @@ In operating systems, when physical memory (RAM) is full and a new page needs to
 - Efficient data structures
 - Clean, modular code architecture
 - Cross-platform ANSI color support
-- Support for up to 100 pages and 1000 unique page numbers
+- Support for up to 100 references and page numbers in `0..999`
 
 ---
 
@@ -155,8 +151,7 @@ When you run the program, you'll see the main menu:
 1. FIFO Algorithm
 2. LRU Algorithm
 3. Optimal Algorithm
-4. Compare All
-5. Exit
+4. Exit
 Enter your choice:
 ```
 
@@ -169,9 +164,10 @@ After selecting an algorithm and entering input, choose how to visualize:
 2. TUI auto (animated)
 ```
 
-Auto mode lets you set a delay in milliseconds (recommended: 200–500ms).
+Auto mode lets you set a delay in milliseconds (50–2000ms).
 Controls:
-- Auto mode: `P` pause/resume, `N` step, `+/-` speed, `Q` quit
+
+- Auto mode: `Ctrl+C` quit
 - Step mode: `Enter` next step, `Q` quit
 
 ### Automated Reference Strings
@@ -186,9 +182,9 @@ This makes the simulation fully automated and ready for visualization.
 
 ### Input Requirements
 
-1. **Select Algorithm** (1-5)
+1. **Select Algorithm** (1-4)
 
-2. **Number of Pages** (1-100)
+2. **Number of References** (1-100)
    - Total number of page references to process
 
 3. **Max Page Number** (1-999)
@@ -201,7 +197,7 @@ This makes the simulation fully automated and ready for visualization.
 
 ```bash
 Enter your choice: 1
-Enter number of pages (1-100): 12
+Enter number of references (1-100): 12
 Enter max page number (1-999): 9
 Enter number of frames (1-100): 3
 ```
@@ -253,7 +249,7 @@ Frames: 3
 - The reference string is generated automatically within `0..Max Page`.
 - The algorithm will replace pages in the order they were loaded.
 
-### Example 2: Comparing Algorithms
+### Example 2: Running Another Algorithm
 
 **Input**:
 
@@ -293,8 +289,8 @@ Test 2 - Frames: 4
 Change maximum limits in the code:
 
 ```c
-#define MAX 200           // Support up to 200 pages
-#define MAX_PAGE 9999     // Support larger page numbers
+#define MAX 100           // Support up to 100 references
+#define MAX_PAGE 999      // Support page numbers 0..999
 ```
 
 ### Disabling Colors
@@ -333,13 +329,12 @@ gcc -std=c99 page_replacement.c -o page_replacement
 
 **Solution**:
 
-- Check input values are within limits (1-100 for pages/frames, 0-999 for page numbers)
+- Check input values are within limits (1-100 for references/frames, 0-999 for page numbers)
 - Ensure sufficient system memory
 
 ### Issue: Unexpected Results
 
 **Solution**:
 
-- Verify your reference string is correct
+- Remember the reference string is randomly generated
 - Try with known test cases
-- Use "Compare All" mode to verify consistency
